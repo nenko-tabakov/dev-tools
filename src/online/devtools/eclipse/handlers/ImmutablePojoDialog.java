@@ -5,8 +5,10 @@ import org.eclipse.jface.viewers.CheckboxTreeViewer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.dialogs.CheckedTreeSelectionDialog;
 
@@ -14,25 +16,35 @@ class ImmutablePojoDialog extends CheckedTreeSelectionDialog {
 
 	private final SelectedListener finalFieldsSelectedListener = new SelectedListener();
 	private final SelectedListener builderSelectedListener = new SelectedListener();
+	private final SelectedListener replaceExistingDeclarations = new SelectedListener();
+	private final SelectedListener makeParametersFinal = new SelectedListener();
 
 	ImmutablePojoDialog(Shell parent) {
 		super(parent, new JavaElementLabelProvider(), new FieldsProvider());
 	}
 
 	@Override
+
 	protected CheckboxTreeViewer createTreeViewer(Composite parent) {
 		CheckboxTreeViewer treeViewer = super.createTreeViewer(parent);
-
-		addButton(parent, "Generate public final fields instead of getters");
-		addButton(parent, "Generate builder instead of public constructor");
+		addButton(parent, "Do not replace existing declarations", replaceExistingDeclarations);
+		addButton(parent, "Add final modifier for parameters", makeParametersFinal);
+		addSeparator(parent);
+		addButton(parent, "Generate public final fields instead of getters", finalFieldsSelectedListener);
+		addButton(parent, "Generate builder instead of public constructor", builderSelectedListener);
 
 		return treeViewer;
 	}
 
-	private void addButton(Composite parent, String text) {
+	private void addButton(Composite parent, String text, SelectedListener listener) {
 		Button selectedButton = new Button(parent, SWT.CHECK);
 		selectedButton.setText(text);
-		selectedButton.addSelectionListener(new SelectedListener());
+		selectedButton.addSelectionListener(listener);
+	}
+
+	private void addSeparator(Composite parent) {
+		Label separator = new Label(parent, SWT.HORIZONTAL | SWT.SEPARATOR);
+		separator.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 	}
 
 	boolean shouldGenerateFinalFields() {
@@ -41,6 +53,14 @@ class ImmutablePojoDialog extends CheckedTreeSelectionDialog {
 
 	boolean shouldGenerateBuilder() {
 		return builderSelectedListener.isSelected();
+	}
+
+	boolean shouldReplaceExistingDeclarations() {
+		return !replaceExistingDeclarations.isSelected();
+	}
+
+	boolean shouldMakeParametersFinal() {
+		return makeParametersFinal.isSelected();
 	}
 
 	static class SelectedListener implements SelectionListener {
@@ -53,6 +73,7 @@ class ImmutablePojoDialog extends CheckedTreeSelectionDialog {
 		}
 
 		@Override
+
 		public void widgetDefaultSelected(SelectionEvent e) {
 			widgetSelected(e);
 		}
@@ -60,5 +81,6 @@ class ImmutablePojoDialog extends CheckedTreeSelectionDialog {
 		boolean isSelected() {
 			return selected;
 		}
+
 	}
 }
