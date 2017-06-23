@@ -1,37 +1,21 @@
-## Welcome to GitHub Pages
+# Dev Tools
+Eclipse Plug-in for converting existing classes to immutable ones.
 
-You can use the [editor on GitHub](https://github.com/nenko-tabakov/dev-tools/edit/master/README.md) to maintain and preview the content for your website in Markdown files.
+## How to install
+Use the update site
+After installation when the Java Editor is active a new menu item (**Convert**) will be available
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+## How to use
 
-### Markdown
+### Common steps
+1. Create class
+2. Add fields
+3. From the menu select Convert -> Generate Immutable POJO
+4. Select appropriate options and click OK
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
-
-```markdown
-Syntax highlighted code block
-
-# Header 1
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
-```
-
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/nenko-tabakov/dev-tools/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://help.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
+### Available options
+ - **Generate method comments** - If selected will generate comments for the generated method based on the predefined Comments Templates
+ - **Do not replace existing declarations** - if selected all methods that alredy exists but should be generated will be kept
+ - **Add final modifier for parameters** - if selected the parameters of the generated methods and constructors will be marked `final`
+ - **Generate public final fields instead of getters** - By default the fields will be marked final and getters will be generated for them. If this option is selected no getters will be generated and the fields will be marked `public final`
+ - **Generate builder instead of public constructor** - By default a public constructor with parameters for each field will be generated. If this option is selected a private constructor will be generated and static inner builder class. This is generally useful if there are way too many fields.
