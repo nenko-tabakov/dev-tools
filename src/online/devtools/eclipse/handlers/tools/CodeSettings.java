@@ -36,6 +36,7 @@ public class CodeSettings {
 		private boolean generateBuilder;
 
 		private Builder() {
+
 		}
 
 		public Builder withIsForBooleanGetters(boolean enabled) {
@@ -78,6 +79,9 @@ public class CodeSettings {
 			this.qualifyFieldAccessWithThis = codeSettings.qualifyFieldAccessWithThis;
 			this.addComments = codeSettings.addComments;
 			this.replaceExistingDeclarations = codeSettings.replaceExistingDeclarations;
+			this.makeParametersFinal = codeSettings.makeParametersFinal;
+			this.generateFinalFields = codeSettings.generateFinalFields;
+			this.generateBuilder = codeSettings.generateBuilder;
 
 			return this;
 		}

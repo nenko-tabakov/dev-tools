@@ -21,6 +21,7 @@ import online.devtools.eclipse.handlers.tools.GenerationTools;
 public class GenerateImmutablePojoHandler extends AbstractHandler {
 
 	@Override
+
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		ITypeRoot typeRoot = JavaUI.getEditorInputTypeRoot(HandlerUtil.getActiveEditor(event).getEditorInput());
 		IType primaryType = typeRoot.findPrimaryType();
@@ -34,7 +35,6 @@ public class GenerateImmutablePojoHandler extends AbstractHandler {
 						createCodeGenerationSettings(dialog, primaryType.getJavaProject())).run();
 			}
 		}
-
 		return null;
 	}
 
@@ -43,12 +43,13 @@ public class GenerateImmutablePojoHandler extends AbstractHandler {
 				.withReplaceExistingDeclarations(dialog.shouldReplaceExistingDeclarations())
 				.withMakeParametersFinal(dialog.shouldMakeParametersFinal())
 				.withGenerateBuilder(dialog.shouldGenerateBuilder())
-				.withGenerateFinalFields(dialog.shouldGenerateFinalFields()).build();
+				.withGenerateFinalFields(dialog.shouldGenerateFinalFields()).withAddComments(dialog.shouldAddComments())
+				.build();
 	}
 
 	private ImmutablePojoDialog openDialog(Shell shell, IType type) {
 		ImmutablePojoDialog dialog = new ImmutablePojoDialog(shell);
-		dialog.setTitle("Convert class to immutable POJO");
+		dialog.setTitle("Make Immutable");
 		dialog.setMessage("Select fields:");
 		dialog.setHelpAvailable(false);
 		dialog.setInitialSelections(FieldsProvider.getFields(type));
@@ -61,5 +62,4 @@ public class GenerateImmutablePojoHandler extends AbstractHandler {
 
 		return null;
 	}
-
 }

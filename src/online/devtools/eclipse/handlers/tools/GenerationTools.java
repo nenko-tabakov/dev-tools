@@ -22,7 +22,7 @@ public final class GenerationTools {
 				.booleanValue();
 	}
 
-	private static String getGetterName(IField field, boolean useIsForBoolGetters) throws JavaModelException {
+	public static String getGetterName(IField field, boolean useIsForBoolGetters) throws JavaModelException {
 		return getGetterName(field.getJavaProject(), field.getElementName(), field.getFlags(),
 				useIsForBoolGetters && isBoolean(field));
 	}

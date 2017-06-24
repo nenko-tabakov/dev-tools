@@ -18,6 +18,7 @@ class ImmutablePojoDialog extends CheckedTreeSelectionDialog {
 	private final SelectedListener builderSelectedListener = new SelectedListener();
 	private final SelectedListener replaceExistingDeclarations = new SelectedListener();
 	private final SelectedListener makeParametersFinal = new SelectedListener();
+	private final SelectedListener addComments = new SelectedListener();
 
 	ImmutablePojoDialog(Shell parent) {
 		super(parent, new JavaElementLabelProvider(), new FieldsProvider());
@@ -27,12 +28,17 @@ class ImmutablePojoDialog extends CheckedTreeSelectionDialog {
 
 	protected CheckboxTreeViewer createTreeViewer(Composite parent) {
 		CheckboxTreeViewer treeViewer = super.createTreeViewer(parent);
+		// TODO: Add link to the preference page for the comments contents
+
+		addButton(parent, "Generate method comments", addComments);
+		addSeparator(parent);
 		addButton(parent, "Do not replace existing declarations", replaceExistingDeclarations);
 		addButton(parent, "Add final modifier for parameters", makeParametersFinal);
 		addSeparator(parent);
 		addButton(parent, "Generate public final fields instead of getters", finalFieldsSelectedListener);
 		addButton(parent, "Generate builder instead of public constructor", builderSelectedListener);
 
+		// TODO: Add message what will be changed/removed from the existing code
 		return treeViewer;
 	}
 
@@ -63,8 +69,11 @@ class ImmutablePojoDialog extends CheckedTreeSelectionDialog {
 		return makeParametersFinal.isSelected();
 	}
 
-	static class SelectedListener implements SelectionListener {
+	boolean shouldAddComments() {
+		return addComments.isSelected();
+	}
 
+	static class SelectedListener implements SelectionListener {
 		private boolean selected = false;
 
 		@Override
@@ -81,6 +90,5 @@ class ImmutablePojoDialog extends CheckedTreeSelectionDialog {
 		boolean isSelected() {
 			return selected;
 		}
-
 	}
 }
