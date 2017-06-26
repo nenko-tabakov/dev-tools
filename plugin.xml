@@ -8,7 +8,7 @@
             name="Convert"> 
       </category> 
       <command 
-            name="Generate Immutable Pojo..." 
+            name="To Immutable..." 
             categoryId="dev-tools.commands.convert.category" 
             id="dev-tools.commands.generateImmutablePojo"> 
       </command> 
@@ -28,10 +28,11 @@
                label="Convert" 
                mnemonic="C" 
                id="dev-tools.menus.convertMenu"> 
-            <command 
-                  commandId="dev-tools.commands.generateImmutablePojo" 
-                  mnemonic="I" 
-                  id="dev-tools.menus.generateImmutablePojo"> 
+            <command
+                  commandId="dev-tools.commands.generateImmutablePojo"
+                  id="dev-tools.menus.generateImmutablePojo"
+                  label="To Immutable..."
+                  mnemonic="I"> 
                <visibleWhen> 
                   <with variable="activeContexts"> 
                      <iterate operator="or"> 
