@@ -67,6 +67,7 @@ public class CodeGenerationOperation {
 		final ITypeRoot typeRoot = fields[0].getTypeRoot();
 		final IType type = typeRoot.findPrimaryType();
 		final ASTParser parser = ASTParser.newParser(AST.JLS8);
+
 		parser.setSource(typeRoot);
 
 		final CompilationUnit compilationUnit = (CompilationUnit) parser.createAST(null);
@@ -77,12 +78,12 @@ public class CodeGenerationOperation {
 			final AbstractTypeDeclaration parent = getParent(compilationUnit, type, AbstractTypeDeclaration.class);
 			final ListRewrite listRewrite = astRewrite.getListRewrite(parent, parent.getBodyDeclarationsProperty());
 
-			ASTNode insertionPoint = null;
+			MethodDeclaration insertionPoint = null;
 
 			if (codeGenerationSettings.generateBuilder) {
 				insertionPoint = addConstructor(listRewrite, astRewrite, type, ast.newModifiers(Modifier.PRIVATE));
 				addBuilderAccessor(listRewrite, astRewrite);
-				addBuilder(listRewrite, astRewrite);
+				addBuilder(listRewrite, astRewrite, insertionPoint, type);
 			} else {
 				insertionPoint = addConstructor(listRewrite, astRewrite, type, ast.newModifiers(Modifier.PUBLIC));
 			}
@@ -100,7 +101,8 @@ public class CodeGenerationOperation {
 		}
 	}
 
-	private void addBuilder(final ListRewrite listRewrite, final ASTRewrite astRewrite) throws JavaModelException {
+	private void addBuilder(final ListRewrite listRewrite, final ASTRewrite astRewrite,
+			final MethodDeclaration constructorToInvoke, final IType parentClass) throws JavaModelException {
 		final AST ast = astRewrite.getAST();
 		final TypeDeclaration builderType = ast.newTypeDeclaration();
 
@@ -118,6 +120,7 @@ public class CodeGenerationOperation {
 
 		builderType.bodyDeclarations().addAll(fieldsDeclaration);
 		builderType.bodyDeclarations().addAll(fieldAssignments);
+		builderType.bodyDeclarations().add(createBuildMethod(ast, constructorToInvoke, parentClass));
 		listRewrite.insertLast(builderType, null);
 	}
 
@@ -131,50 +134,39 @@ public class CodeGenerationOperation {
 	 * Adds a constructor.
 	 * 
 	 * 
-	 * 
 	 * If a constructor already exists and should not be replaced then this
-	 * 
 	 * method returns the existing constructor
 	 * 
 	 * 
-	 * 
 	 * @param listRewrite
-	 * 
 	 * @param astRewrite
-	 * 
 	 * @param type
-	 * 
 	 * @param modifiers
-	 * 
 	 *            Modifiers for the constructor
 	 * 
 	 * @return The ASTNode for the constructor. Used as an insertion point for
-	 * 
 	 *         the next statement in most cases. In case the constructor is not
-	 * 
 	 *         added (if it exists and should not be replaced) the insertion
-	 * 
 	 *         point is the existing constructor otherwise it is the newly added
-	 * 
 	 *         constructor
 	 * 
 	 * @throws CoreException
-	 * 
 	 */
-	private ASTNode addConstructor(final ListRewrite listRewrite, final ASTRewrite astRewrite, final IType type,
-			final Collection<IExtendedModifier> modifiers) throws CoreException {
+	private MethodDeclaration addConstructor(final ListRewrite listRewrite, final ASTRewrite astRewrite,
+			final IType type, final Collection<IExtendedModifier> modifiers) throws CoreException {
 		return addConstructor(listRewrite, astRewrite, type, modifiers,
 				existingConstructor -> existingConstructor != null
 						&& !codeGenerationSettings.replaceExistingDeclarations);
 	}
 
-	private ASTNode addConstructor(final ListRewrite listRewrite, final ASTRewrite astRewrite, final IType type,
-			final Collection<IExtendedModifier> modifiers, Predicate<IMethod> shouldReplaceExistingConstructor)
-			throws CoreException {
+	private MethodDeclaration addConstructor(final ListRewrite listRewrite, final ASTRewrite astRewrite,
+			final IType type, final Collection<IExtendedModifier> modifiers,
+			Predicate<IMethod> shouldReplaceExistingConstructor) throws CoreException {
 		final String constructorName = type.getTypeQualifiedName('.');
 		final IMethod existingConstructor = findMethod(constructorName, type, getFieldsTypes(), true);
+
 		if (shouldReplaceExistingConstructor != null && shouldReplaceExistingConstructor.test(existingConstructor)) {
-			return getNode(listRewrite, existingConstructor.getSourceRange());
+			return (MethodDeclaration) getNode(listRewrite, existingConstructor.getSourceRange());
 		}
 
 		removeMethod(existingConstructor, listRewrite);
@@ -193,7 +185,6 @@ public class CodeGenerationOperation {
 	private void addGetters(final ListRewrite listRewrite, final ASTRewrite astRewrite,
 			final CompilationUnit compilationUnit, final IType type, ASTNode insertPoint) throws CoreException {
 		final AST ast = astRewrite.getAST();
-
 		for (IField field : fields) {
 			final String methodName = getGetterName(field);
 			final IMethod existingMethod = findMethod(methodName, type, new String[0], false);
@@ -305,7 +296,6 @@ public class CodeGenerationOperation {
 				}
 			}
 		}
-
 		return false;
 	}
 
@@ -318,6 +308,7 @@ public class CodeGenerationOperation {
 		methodDeclaration.setReturnType2(createType(ast, field));
 		methodDeclaration.setBody(body);
 		methodDeclaration.modifiers().add(createPublicModifier(ast));
+
 		return methodDeclaration;
 	}
 
@@ -332,6 +323,7 @@ public class CodeGenerationOperation {
 	private ReturnStatement createReturnStatement(final AST ast, final Expression expression) {
 		final ReturnStatement returnStatement = ast.newReturnStatement();
 		returnStatement.setExpression(expression);
+
 		return returnStatement;
 	}
 
@@ -339,6 +331,7 @@ public class CodeGenerationOperation {
 		if (codeGenerationSettings.qualifyFieldAccessWithThis) {
 			return createThisPrefixedFieldAccess(ast, field);
 		}
+
 		return createSimpleName(ast, field);
 	}
 
@@ -346,6 +339,7 @@ public class CodeGenerationOperation {
 		final FieldAccess fieldAccess = ast.newFieldAccess();
 		fieldAccess.setExpression(ast.newThisExpression());
 		fieldAccess.setName(createSimpleName(ast, field));
+
 		return fieldAccess;
 	}
 
@@ -354,7 +348,6 @@ public class CodeGenerationOperation {
 		final Block body = ast.newBlock();
 		body.statements().add(ast.newExpressionStatement(createAssignment(ast, field)));
 		body.statements().add(createThisReturnStatement(ast));
-
 		final String fieldName = field.getElementName();
 		final String name = "with" + Character.toUpperCase(fieldName.charAt(0))
 				+ fieldName.substring(1, fieldName.length());
@@ -367,6 +360,31 @@ public class CodeGenerationOperation {
 		methodDeclaration.parameters().add(createParameter(ast, field));
 
 		return methodDeclaration;
+	}
+
+	private MethodDeclaration createBuildMethod(final AST ast, final MethodDeclaration constructorToInvoke,
+			final IType parentClass) {
+		final ClassInstanceCreation instance = ast.newClassInstanceCreation();
+		instance.setType(createSimpleType(ast, parentClass.getElementName().toString()));
+
+		final List<SingleVariableDeclaration> constructorParameters = constructorToInvoke.parameters();
+
+		if (constructorParameters != null) {
+			for (SingleVariableDeclaration param : constructorParameters) {
+				instance.arguments().add(ast.newSimpleName(param.getName().toString()));
+			}
+		}
+
+		final Block body = ast.newBlock();
+		body.statements().add(createReturnStatement(ast, instance));
+
+		final MethodDeclaration buildMethod = ast.newMethodDeclaration();
+		buildMethod.modifiers().add(createPublicModifier(ast));
+		buildMethod.setName(ast.newSimpleName("build"));
+		buildMethod.setReturnType2(createSimpleType(ast, parentClass.getElementName().toString()));
+		buildMethod.setBody(body);
+
+		return buildMethod;
 	}
 
 	private MethodDeclaration createBuilderAccessor(final AST ast) throws JavaModelException {
@@ -387,9 +405,7 @@ public class CodeGenerationOperation {
 	}
 
 	private SimpleType createBuilderType(final AST ast) {
-
 		return ast.newSimpleType(ast.newSimpleName(BUILDER_TYPE_NAME));
-
 	}
 
 	private SimpleName createSimpleName(final AST ast, final IField field) {
@@ -423,6 +439,7 @@ public class CodeGenerationOperation {
 		final FieldDeclaration fieldDeclaration = ast.newFieldDeclaration(variableDeclarationFragment);
 		fieldDeclaration.modifiers().addAll(modifiers);
 		fieldDeclaration.setType(createType(ast, field));
+
 		return fieldDeclaration;
 	}
 
@@ -463,7 +480,6 @@ public class CodeGenerationOperation {
 
 	private SingleVariableDeclaration createParameter(final AST ast, final IField field) throws JavaModelException {
 		final SingleVariableDeclaration parameter = ast.newSingleVariableDeclaration();
-
 		parameter.setName(createSimpleName(ast, field));
 		parameter.setType(createType(ast, field));
 
@@ -481,7 +497,6 @@ public class CodeGenerationOperation {
 		assignment.setOperator(Assignment.Operator.ASSIGN);
 
 		return assignment;
-
 	}
 
 	private String getType(final IField field) throws JavaModelException {
@@ -497,7 +512,6 @@ public class CodeGenerationOperation {
 			final MethodDeclaration declaration = (MethodDeclaration) getParent(
 					NodeFinder.perform(rewrite.getParent().getRoot(), accessor.getNameRange()),
 					MethodDeclaration.class);
-
 			if (declaration != null) {
 				rewrite.remove(declaration, null);
 			}
@@ -506,7 +520,6 @@ public class CodeGenerationOperation {
 
 	private IMethod findMethod(final String name, final IType type, final String[] paramTypes,
 			final boolean isConstructor) throws JavaModelException {
-
 		IMethod[] methods = type.getMethods();
 		for (int i = 0; i < methods.length; i++) {
 			if (isSameMethodSignature(name, paramTypes, isConstructor, methods[i])) {
@@ -519,7 +532,6 @@ public class CodeGenerationOperation {
 
 	private boolean isSameMethodSignature(final String name, final String[] paramTypes, final boolean isConstructor,
 			final IMethod method) throws JavaModelException {
-
 		if (isConstructor || name.equals(method.getElementName())) {
 			if (isConstructor == method.isConstructor()) {
 				String[] currParamTypes = method.getParameterTypes();
