@@ -4,7 +4,7 @@ Eclipse Plug-in for converting existing classes to immutable ones.
 ## How to install
 
 ### Using Update Site
-1. Download the update site
+1. Download the [update site](https://github.com/nenko-tabakov/dev-tools/releases/download/InitialRelease/devtools-update.zip)
 2. Extract on the file system
 3. Start Eclipse
 4. From the menu select Help -> Install New Software...
@@ -13,7 +13,7 @@ Eclipse Plug-in for converting existing classes to immutable ones.
 7. Follow the on-screen instructions
 
 ### Using Feature
-1. Download the zipped feature
+1. Download the zipped [feature](https://github.com/nenko-tabakov/dev-tools/releases/download/InitialRelease/devtools-feature.zip)
 2. Start Eclipse
 3. From the menu select Help -> Install New Software...
 4. From the open window click on Add...
