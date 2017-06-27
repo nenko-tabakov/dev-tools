@@ -28,7 +28,7 @@ After installation when the Java Editor is active a new menu item (**Convert**) 
 ### Common steps
 1. Create class
 2. Add fields
-3. From the menu select Convert -> Generate Immutable POJO
+3. From the menu select Convert -> To Immutable...
 4. Select appropriate options and click OK
 
 ### Available options
