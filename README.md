@@ -2,12 +2,24 @@
 Eclipse Plug-in for converting existing classes to immutable ones.
 
 ## How to install
+
+### Using Update Site
 1. Download the update site
 2. Extract on the file system
 3. Start Eclipse
 4. From the menu select Help -> Install New Software...
-5. Click Local and navigate to the extracted update site
-6. Follow the on-screen instructions
+5. From the open window click on Add...
+6. Click Local and navigate to the extracted update site. Don't forget to give it a name.
+7. Follow the on-screen instructions
+
+### Using Feature
+1. Download the zipped feature
+2. Start Eclipse
+3. From the menu select Help -> Install New Software...
+4. From the open window click on Add...
+5. Click Archive and navigate to the extracted update site.
+6. After selecting the update size archive deselect "Group items by category"
+7. Follow the on-screen instructions
  
 After installation when the Java Editor is active a new menu item (**Convert**) will be available
 
