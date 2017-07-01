@@ -29,6 +29,8 @@ import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.IExtendedModifier;
+import org.eclipse.jdt.core.dom.IfStatement;
+import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.Modifier.ModifierKeyword;
@@ -39,6 +41,7 @@ import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SimpleType;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
+import org.eclipse.jdt.core.dom.Statement;
 import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
@@ -171,7 +174,8 @@ public class CodeGenerationOperation {
 
 		removeMethod(existingConstructor, listRewrite);
 		ASTNode insertionPoint = getLastField(listRewrite);
-		final MethodDeclaration constructor = createConstructor(constructorName, fields, astRewrite, modifiers);
+		final MethodDeclaration constructor = createConstructor(constructorName, fields, listRewrite, astRewrite,
+				modifiers);
 		if (codeGenerationSettings.addComments) {
 			final String comment = CodeGeneration.getMethodComment(type.getCompilationUnit(), type.getElementName(),
 					constructor, null, getLineDelimiter());
@@ -455,15 +459,15 @@ public class CodeGenerationOperation {
 		return ast.newModifier(ModifierKeyword.STATIC_KEYWORD);
 	}
 
-	private MethodDeclaration createConstructor(final String name, final IField[] fields, final ASTRewrite astRewrite,
-			final Collection<IExtendedModifier> modifiers) throws JavaModelException {
+	private MethodDeclaration createConstructor(final String name, final IField[] fields, final ListRewrite listRewrite,
+			final ASTRewrite astRewrite, final Collection<IExtendedModifier> modifiers) throws CoreException {
 		final AST ast = astRewrite.getAST();
 		final Block body = ast.newBlock();
 		final Collection<SingleVariableDeclaration> parameters = new ArrayList<>();
 
 		if (fields != null) {
 			for (IField field : fields) {
-				body.statements().add(ast.newExpressionStatement(createAssignment(ast, field)));
+				body.statements().add(createFieldInitialization(field, listRewrite, astRewrite));
 				parameters.add(createParameter(ast, field));
 			}
 		}
@@ -476,6 +480,44 @@ public class CodeGenerationOperation {
 		constructor.parameters().addAll(parameters);
 
 		return constructor;
+	}
+
+	private Statement createFieldInitialization(final IField field, final ListRewrite listRewrite,
+			final ASTRewrite astRewrite) throws JavaModelException {
+		final AST ast = astRewrite.getAST();
+		final FieldDeclaration fieldNode = (FieldDeclaration) getNode(listRewrite, field);
+		final VariableDeclarationFragment variableDeclaration = (VariableDeclarationFragment) fieldNode.fragments()
+				.iterator().next();
+
+		final Expression variableInitializer = variableDeclaration.getInitializer();
+		if (variableInitializer == null) {
+			return ast.newExpressionStatement(createAssignment(ast, field));
+		} else {
+			Statement initalizationStatement = null;
+			if (fieldNode.getType().isPrimitiveType()) {
+				initalizationStatement = ast.newExpressionStatement(createAssignment(ast, field));
+			} else {
+				final IfStatement ifStatement = ast.newIfStatement();
+				ifStatement.setExpression(createNotNullCheck(ast, field));
+				ifStatement.setThenStatement(ast.newExpressionStatement(createAssignment(ast, field)));
+				ifStatement.setElseStatement(ast.newExpressionStatement(
+						createAssignment(ast, field, (Expression) ASTNode.copySubtree(ast, variableInitializer))));
+				initalizationStatement = ifStatement;
+			}
+
+			astRewrite.remove(variableInitializer, null);
+
+			return initalizationStatement;
+		}
+	}
+
+	private InfixExpression createNotNullCheck(final AST ast, final IField field) {
+		final InfixExpression nullCheck = ast.newInfixExpression();
+		nullCheck.setLeftOperand(createSimpleName(ast, field));
+		nullCheck.setOperator(InfixExpression.Operator.NOT_EQUALS);
+		nullCheck.setRightOperand(ast.newNullLiteral());
+
+		return nullCheck;
 	}
 
 	private SingleVariableDeclaration createParameter(final AST ast, final IField field) throws JavaModelException {
@@ -491,9 +533,13 @@ public class CodeGenerationOperation {
 	}
 
 	private Assignment createAssignment(final AST ast, final IField field) {
+		return createAssignment(ast, field, createSimpleName(ast, field));
+	}
+
+	private Assignment createAssignment(final AST ast, final IField field, final Expression expression) {
 		final Assignment assignment = ast.newAssignment();
 		assignment.setLeftHandSide(createThisPrefixedFieldAccess(ast, field));
-		assignment.setRightHandSide(createSimpleName(ast, field));
+		assignment.setRightHandSide(expression);
 		assignment.setOperator(Assignment.Operator.ASSIGN);
 
 		return assignment;
