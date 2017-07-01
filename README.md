@@ -2,12 +2,24 @@
 Eclipse Plug-in for converting existing classes to immutable ones.
 
 ## How to install
-1. Download the update site
+
+### Using Update Site
+1. Download the [update site](https://github.com/nenko-tabakov/dev-tools/releases/download/InitialRelease/devtools-update.zip)
 2. Extract on the file system
 3. Start Eclipse
 4. From the menu select Help -> Install New Software...
-5. Click Local and navigate to the extracted update site
-6. Follow the on-screen instructions
+5. From the open window click on Add...
+6. Click Local and navigate to the extracted update site. Don't forget to give it a name.
+7. Follow the on-screen instructions
+
+### Using Feature
+1. Download the zipped [feature](https://github.com/nenko-tabakov/dev-tools/releases/download/InitialRelease/devtools-feature.zip)
+2. Start Eclipse
+3. From the menu select Help -> Install New Software...
+4. From the open window click on Add...
+5. Click Archive and navigate to the extracted update site.
+6. After selecting the update size archive deselect "Group items by category"
+7. Follow the on-screen instructions
  
 After installation when the Java Editor is active a new menu item (**Convert**) will be available
 
@@ -16,7 +28,7 @@ After installation when the Java Editor is active a new menu item (**Convert**) 
 ### Common steps
 1. Create class
 2. Add fields
-3. From the menu select Convert -> Generate Immutable POJO
+3. From the menu select Convert -> To Immutable...
 4. Select appropriate options and click OK
 
 ### Available options
